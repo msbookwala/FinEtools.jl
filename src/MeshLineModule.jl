@@ -39,6 +39,25 @@ function L2blockx(xs::Vector{T}) where {T<:Number}
 end
 
 """
+    L2blockx2D(xs::Vector{T}) where {T<:Number}
+
+Graded mesh of a 1-D block, L2 finite elements.
+"""
+function L2blockx2D(xs::Vector{T}, ys::Vector{T}) where {T<:Number}
+    xyz = zeros(length(xs), 2)
+    xyz[:, 1] = xs
+    xyz[:, 2] = ys
+    ncells = length(xs) - 1
+    # create the nodes
+    fens = FENodeSet(xyz)
+    # Create the finite elements
+    fes = FESetL2([(1:ncells) (2:(ncells+1))])
+
+    return fens, fes
+end
+
+
+"""
     L3blockx(xs::Vector{T}) where {T<:Number}
 
 Graded mesh of a 1-D block, L2 finite elements.
