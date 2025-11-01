@@ -529,9 +529,9 @@ export Q4annulus,
     Q4circlen,
     Q4extrudeL2
 
-using .MeshLineModule: L2block, L2blockx, L3blockx
+using .MeshLineModule: L2block, L2blockx, L2blockx2D, L3blockx
 # Exported: mesh generation functions for line elements
-export L2block, L2blockx, L3blockx
+export L2block, L2blockx, L2blockx2D, L3blockx
 
 using .MeshTriangleModule:
     T3blockx,
