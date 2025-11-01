@@ -1,5 +1,5 @@
-name = "FinEtools"
-uuid = "91bb5406-6c9a-523d-811d-0644c4229550"
+name = "myFinEtools"
+uuid = "c470d985-ac36-4012-bfd4-c92e93afba4f"
 authors = ["Petr Krysl <pkrysl@ucsd.edu>"]
 version = "8.1.1"
 
