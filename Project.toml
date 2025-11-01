@@ -1,4 +1,4 @@
-name = "myFinEtools"
+name = "FinEtools"
 uuid = "c470d985-ac36-4012-bfd4-c92e93afba4f"
 authors = ["Petr Krysl <pkrysl@ucsd.edu>"]
 version = "8.1.1"
