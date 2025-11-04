@@ -469,7 +469,9 @@ using .FEMMBaseModule:
     bilform_lin_elastic,
     innerproduct,
     field_elem_to_nodal!,
-    field_nodal_to_elem!
+    field_nodal_to_elem!,
+    bilform_masslike
+
 # Exported: type base discretization methods
 export AbstractFEMM,
     FEMMBase,
@@ -493,7 +495,8 @@ export AbstractFEMM,
     bilform_lin_elastic,
     innerproduct,
     field_elem_to_nodal!,
-    field_nodal_to_elem!
+    field_nodal_to_elem!,
+    bilform_masslike
 
 ###########################################################################
 # Mesh-generation functionality for various shapes
