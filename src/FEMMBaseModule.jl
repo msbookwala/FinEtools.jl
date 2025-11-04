@@ -1823,4 +1823,54 @@ function bilform_lin_elastic(
     return bilform_lin_elastic(self, assembler, geom, u, mr, cf)
 end
 
+
+function bilform_masslike(
+    self::FEMM,
+    assembler::A,
+    geom::NodalField{FT},
+    u::NodalField{T},
+    cf::DC;
+    m = 3,
+) where {FEMM<:AbstractFEMM,A<:AbstractSysmatAssembler,FT,T,DC<:DataCache}
+    fes = finite_elements(self)
+    nne, ndn, ecoords, dofnums, loc, J, gradN = _buff_b(self, geom, u)
+    elmdim, elmat, elvec = _buff_e(self, geom, u, assembler)
+    npts, Ns, gradNparams, w, pc = integrationdata(self.integdomain)
+    startassembly!(assembler, size(elmat)..., count(fes), nalldofs(u), nalldofs(u))
+    I_ = Int[]
+    J_ = Int[]
+    V_ = Float64[]
+    # elmat = zeros(Float64, elmdim, elmdim)
+
+
+    for i in eachindex(fes) # Loop over elements
+        gathervalues_asmat!(geom, ecoords, fes.conn[i])
+        fill!(elmat, 0.0) # Initialize element matrix
+        for j = 1:npts # Loop over quadrature points
+            locjac!(loc, J, ecoords, Ns[j], gradNparams[j])
+            Jac = Jacobianmdim(self.integdomain, J, loc, fes.conn[i], Ns[j], m)
+            c = cf(loc, J, i, j)
+            for k = 1:nne, m = 1:nne
+                factor = (Ns[j][k] * Ns[j][m] * Jac * w[j])
+                for p = 1:ndn, q = 1:ndn
+                    elmat[(k-1)*ndn+p, (m-1)*ndn+q] += factor * c[p, q]
+                end
+            end
+        end # Loop over quadrature points
+        gatherdofnums!(u, dofnums, fes.conn[i])# retrieve degrees of freedom
+        assemble!(assembler, elmat, dofnums, dofnums)# assemble symmetric matrix
+    end # Loop over elements
+    return makematrix!(assembler)
+end
+
+function bilform_masslike(
+    self::FEMM,
+    geom::NodalField{FT},
+    u::NodalField{T},
+    cf::DC,
+) where {FEMM<:AbstractFEMM,FT,T,DC<:DataCache}
+    assembler = SysmatAssemblerSparseSymm()
+    return bilform_masslike(self, assembler, geom, u, cf)
+end
+
 end # module
