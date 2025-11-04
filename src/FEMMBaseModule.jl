@@ -1832,34 +1832,62 @@ function bilform_masslike(
     cf::DC;
     m = 3,
 ) where {FEMM<:AbstractFEMM,A<:AbstractSysmatAssembler,FT,T,DC<:DataCache}
+
     fes = finite_elements(self)
     nne, ndn, ecoords, dofnums, loc, J, gradN = _buff_b(self, geom, u)
-    elmdim, elmat, elvec = _buff_e(self, geom, u, assembler)
+    elmdim, elmat_buf, elvec = _buff_e(self, geom, u, assembler)
     npts, Ns, gradNparams, w, pc = integrationdata(self.integdomain)
-    startassembly!(assembler, size(elmat)..., count(fes), nalldofs(u), nalldofs(u))
-    I_ = Int[]
-    J_ = Int[]
-    V_ = Float64[]
-    # elmat = zeros(Float64, elmdim, elmdim)
 
+    n_elems = count(fes)
+    elrows = ndn
+    elcols = nne * ndn
+
+    # sanity check: elmat_buf should be elrows × elcols (or we allocate below)
+    if !(size(elmat_buf,1) == elrows && size(elmat_buf,2) == elcols)
+        # allocate our working elmat with expected shape
+        elmat = zeros(Float64, elrows, elcols)
+    else
+        elmat = elmat_buf
+        fill!(elmat, 0.0)
+    end
+
+    nrows_global = n_elems * elrows
+    ncols_global = nalldofs(u)
+    startassembly!(assembler, size(elmat)..., n_elems, nrows_global, ncols_global)
+
+    gatherdofnums!(u, dofnums, fes.conn[1]) 
 
     for i in eachindex(fes) # Loop over elements
         gathervalues_asmat!(geom, ecoords, fes.conn[i])
         fill!(elmat, 0.0) # Initialize element matrix
+
         for j = 1:npts # Loop over quadrature points
             locjac!(loc, J, ecoords, Ns[j], gradNparams[j])
             Jac = Jacobianmdim(self.integdomain, J, loc, fes.conn[i], Ns[j], m)
             c = cf(loc, J, i, j)
-            for k = 1:nne, m = 1:nne
-                factor = (Ns[j][k] * Ns[j][m] * Jac * w[j])
-                for p = 1:ndn, q = 1:ndn
-                    elmat[(k-1)*ndn+p, (m-1)*ndn+q] += factor * c[p, q]
+            for a_local = 1:nne
+                for b_local = 1:nne
+                    factor = (Ns[j][b_local] * Jac * w[j]) # note: factor depends on trial index b_local
+                    for p = 1:ndn, q = 1:ndn
+                        # column index for node b_local and component q
+                        col_idx = (b_local-1)*ndn + q
+                        elmat[p, col_idx] += factor * c[p, q]
+                    end
                 end
             end
         end # Loop over quadrature points
-        gatherdofnums!(u, dofnums, fes.conn[i])# retrieve degrees of freedom
-        assemble!(assembler, elmat, dofnums, dofnums)# assemble symmetric matrix
+
+        # gather element dof numbers (length should be elcols)
+        gatherdofnums!(u, dofnums, fes.conn[i])
+
+        # row DOFs: block of elrows for element i in the global row space
+        rowdofs = ((i-1)*elrows + 1) : (i*elrows)
+
+
+        # assemble rectangular local matrix into global rectangular matrix
+        assemble!(assembler, elmat, rowdofs, dofnums)
     end # Loop over elements
+
     return makematrix!(assembler)
 end
 
