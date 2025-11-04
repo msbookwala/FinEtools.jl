@@ -1883,7 +1883,6 @@ function bilform_masslike(
         # row DOFs: block of elrows for element i in the global row space
         rowdofs = ((i-1)*elrows + 1) : (i*elrows)
 
-
         # assemble rectangular local matrix into global rectangular matrix
         assemble!(assembler, elmat, rowdofs, dofnums)
     end # Loop over elements
@@ -1897,7 +1896,7 @@ function bilform_masslike(
     u::NodalField{T},
     cf::DC,
 ) where {FEMM<:AbstractFEMM,FT,T,DC<:DataCache}
-    assembler = SysmatAssemblerSparseSymm()
+    assembler = SysmatAssemblerSparse()
     return bilform_masslike(self, assembler, geom, u, cf)
 end
 
