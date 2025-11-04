@@ -1842,9 +1842,7 @@ function bilform_masslike(
     elrows = ndn
     elcols = nne * ndn
 
-    # sanity check: elmat_buf should be elrows × elcols (or we allocate below)
     if !(size(elmat_buf,1) == elrows && size(elmat_buf,2) == elcols)
-        # allocate our working elmat with expected shape
         elmat = zeros(Float64, elrows, elcols)
     else
         elmat = elmat_buf
@@ -1855,37 +1853,27 @@ function bilform_masslike(
     ncols_global = nalldofs(u)
     startassembly!(assembler, size(elmat)..., n_elems, nrows_global, ncols_global)
 
-    gatherdofnums!(u, dofnums, fes.conn[1]) 
-
-    for i in eachindex(fes) # Loop over elements
+    for i in eachindex(fes)
         gathervalues_asmat!(geom, ecoords, fes.conn[i])
-        fill!(elmat, 0.0) # Initialize element matrix
+        fill!(elmat, 0.0)
 
-        for j = 1:npts # Loop over quadrature points
+        for j = 1:npts
             locjac!(loc, J, ecoords, Ns[j], gradNparams[j])
             Jac = Jacobianmdim(self.integdomain, J, loc, fes.conn[i], Ns[j], m)
             c = cf(loc, J, i, j)
-            for a_local = 1:nne
-                for b_local = 1:nne
-                    factor = (Ns[j][b_local] * Jac * w[j]) # note: factor depends on trial index b_local
-                    for p = 1:ndn, q = 1:ndn
-                        # column index for node b_local and component q
-                        col_idx = (b_local-1)*ndn + q
-                        elmat[p, col_idx] += factor * c[p, q]
-                    end
+            for b_local = 1:nne
+                factor = Ns[j][b_local] * Jac * w[j]
+                for p = 1:ndn, q = 1:ndn
+                    col_idx = (b_local-1)*ndn + q
+                    elmat[p, col_idx] += factor * c[p, q]
                 end
             end
-        end # Loop over quadrature points
+        end
 
-        # gather element dof numbers (length should be elcols)
         gatherdofnums!(u, dofnums, fes.conn[i])
-
-        # row DOFs: block of elrows for element i in the global row space
-        rowdofs = ((i-1)*elrows + 1) : (i*elrows)
-
-        # assemble rectangular local matrix into global rectangular matrix
+        rowdofs = collect(((i-1)*elrows + 1) : (i*elrows))
         assemble!(assembler, elmat, rowdofs, dofnums)
-    end # Loop over elements
+    end
 
     return makematrix!(assembler)
 end
