@@ -11,3 +11,5 @@ psi = NodalField(fill(1.0, count(fens), 1))
 numberdofs!(psi)
 femm = FEMMBase(IntegDomain(fes, GaussRule(1, 2)))
 G = bilform_masslike(femm, geom, psi, DataCache(LinearAlgebra.I(1)))
+
+fens, fes = L3blockx2d(xs, ys)

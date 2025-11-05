@@ -79,4 +79,21 @@ function L3blockx(xs::Vector{T}) where {T<:Number}
     return fens, fes
 end
 
+function L3blockx2d(xs::Vector{T}, ys::Vector{T}) where {T<:Number}
+    fens, fes = L2blockx2D(xs, ys)
+    nxyz = zeros(count(fes), size(fens.xyz, 2))
+    nconn = zeros(Int, count(fes), 3)
+    N = count(fens)
+    for i in eachindex(fes)
+        N = N + 1
+        nxyz[i, :] = mean(fens.xyz[[k for k in fes.conn[i]], :], dims = 1)
+        nconn[i, :] = vcat([k for k in fes.conn[i]], [N])
+    end
+    fens = FENodeSet([fens.xyz; nxyz])
+    # Create the finite elements
+    fes = FESetL3(nconn)
+
+    return fens, fes
+end
+
 end
