@@ -79,7 +79,7 @@ function L3blockx(xs::Vector{T}) where {T<:Number}
     return fens, fes
 end
 
-function L3blockx2d(xs::Vector{T}, ys::Vector{T}) where {T<:Number}
+function L3blockx2D(xs::Vector{T}, ys::Vector{T}) where {T<:Number}
     fens, fes = L2blockx2D(xs, ys)
     nxyz = zeros(count(fes), size(fens.xyz, 2))
     nconn = zeros(Int, count(fes), 3)
